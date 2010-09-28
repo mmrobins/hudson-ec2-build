@@ -11,7 +11,7 @@ elif [ -f /usr/bin/apt-get ]
 then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y ruby libopenssl-ruby rdoc
+    apt-get install -y ruby libopenssl-ruby rdoc git-core
 elif [ -f /usr/bin/emerge ]
 then
     emerge dev-lang/ruby
@@ -21,37 +21,23 @@ then
 fi
 
 # Download the latest stable puppet
-rm -rf puppet*
-wget -O puppet.tgz http://puppetlabs.com/downloads/puppet/puppet-latest.tgz
-tar zxf puppet.tgz
-rm puppet.tgz
-mv puppet* puppet
+git clone git://github.com/puppetlabs/puppet.git
 
 # Download the latest stable facter
-rm -rf facter*
-wget -O facter.tgz http://puppetlabs.com/downloads/facter/facter-latest.tgz
-tar zxf facter.tgz
-rm facter.tgz
-mv facter* facter
+git clone git://github.com/puppetlabs/facter.git
 
 # Download the latest rubygems
 rm -rf rubygems*
-wget -O rubygems.tgz http://rubyforge.org/frs/download.php/60718/rubygems-1.3.5.tgz
+wget -O rubygems.tgz http://production.cf.rubygems.org/rubygems/rubygems-1.3.7.tgz
 tar zxf rubygems.tgz
 cd rubygems*
 ruby setup.rb
 ln -s /usr/bin/gem1.8 /usr/bin/gem || true
 cd
 
-# Patch Puppet
-cd puppet
-patch -p1 < $HOME/hudson-ec2-build/patches/puppet_gem_options.patch
-patch -p1 < $HOME/hudson-ec2-build/patches/puppet_pkg.patch
-mv $HOME/hudson-ec2-build/pkg.rb lib/puppet/provider/package
-
 # Get ready to run puppet
 export PATH=$HOME/puppet/bin:$HOME/puppet/sbin:$HOME/facter/bin:$PATH
-export RUBYLIB=$HOME/facter/lib:$HOME/puppet/lib
+export RUBYLIB=$HOME/facter/lib:$HOME/puppet/lib:$RUBYLIB
 
 puppet --color false --modulepath=$HOME/hudson-ec2-build $HOME/hudson-ec2-build/manifest.pp
 
